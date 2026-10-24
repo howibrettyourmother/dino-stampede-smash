@@ -2,7 +2,11 @@
 import base64,os,re,sys
 D=os.path.dirname(os.path.abspath(__file__));O=os.path.dirname(D);V=sys.argv[1]
 font=base64.b64encode(open(f'{D}/baloo.woff','rb').read()).decode()
-t=open(f'{D}/template.html').read().replace('/*__FONT__*/',font).replace('%VER%',V.split('-')[0]).replace('/*__GAME__*/',open(f'{D}/game.js').read())
+# Zoe-mode counting voice: shared kids-voice player + Kokoro number clips n1..n100 (src/kv), embedded as base64
+import json
+kvc={f'n{i}':base64.b64encode(open(f'{D}/kv/n{i}.mp3','rb').read()).decode() for i in range(1,101)}
+kv='window.KV_CLIPS='+json.dumps(kvc,separators=(',',':'))+';\n'+open(f'{D}/kv/voice.js').read()+'\n'
+t=open(f'{D}/template.html').read().replace('/*__FONT__*/',font).replace('%VER%',V.split('-')[0]).replace('/*__GAME__*/',kv+open(f'{D}/game.js').read())
 # shared kids-hub snippets (hold-home button + SW auto-reload), same as the other games
 home=open('/workspace/kids-hubs/home.js').read().strip().replace('%OWN%','alex').replace('%POS%','left:calc(6px + env(safe-area-inset-left));top:calc(6px + env(safe-area-inset-top))')
 sw=re.search(r'SNIP="""(.*?)"""',open('/workspace/kids-hubs/swfix.py').read(),re.S).group(1)

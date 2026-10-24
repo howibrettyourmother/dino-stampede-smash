@@ -27,6 +27,8 @@ function initAudio(){if(AC)return;try{AC=new(window.AudioContext||window.webkitA
  if(AC.state!=='running'){const p=AC.resume();if(p&&p.catch)p.catch(()=>{})}}
 function unlock(){initAudio();if(!AC)return;if(AC.state!=='running'){try{AC.resume()}catch(e){}}
  try{const s=AC.createBufferSource();s.buffer=AC.createBuffer(1,1,22050);s.connect(AC.destination);s.start(0)}catch(e){}}
+// Zoe mode counting voice (shared kids-voice pack, src/kv): every smash says the running count; music ducks under it
+if(window.KV)KV.init({getCtx:()=>{initAudio();return AC},duck:()=>musG,clips:window.KV_CLIPS,preload:['n1','n2','n3','n4','n5']});
 const live=()=>AC&&AC.state==='running';
 function tone(type,f0,f1,dur,vol,t0=0,dest){if(!live())return;dest=dest||sfxG;const t=AC.currentTime+Math.max(0,t0),o=AC.createOscillator(),gn=AC.createGain();o.type=type;
  o.frequency.setValueAtTime(f0,t);if(f1!==f0)o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);
@@ -124,7 +126,7 @@ function credit(by,b){save.smashed++;if(by==='wave')return;const pts=b.max*10;
  if(a){if(a.comboT>0)a.combo++;else a.combo=1;a.comboT=mode==='alex'&&ms?Math.max(1,2.6-ms.L*.07):2.6;a.chain++;a.mega=Math.min(1,a.mega+(by==='jet'?.03:.07)*(ab('MEGA CHARGE')?1.4:1));if(b.type==='fuel'&&a.hp<a.hpMax){a.hp=Math.min(a.hpMax,a.hp+10);texts.push({x:b.x,y:b.y-b.h-U*8,s:'+10 ❤️',t:0,col:'#69db7c',sz:U*4.5})}if(mode==='alex')misCount(b);const p=pts*a.combo;a.score+=p;
   if(a.combo>=3&&a.combo%1===0)texts.push({x:b.x,y:b.y-b.h-U*4,s:'x'+a.combo+'!',t:0,col:'#ffd43b',sz:U*(5+Math.min(a.combo,12)*.4)});
   if(mode==='alex'&&a.score>save.hi)save.hi=a.score}
- if(z){z.score++;save.zoe++}
+ if(z){z.score++;save.zoe++;if(mode==='zoe'&&window.KV)KV.count(z.score)}
  if(mode==='together'&&!finale&&!wave)meter=Math.min(1,meter+.028)}
 function endCombo(a){if(a.chain>save.biggest&&mode==='alex'){save.biggest=a.chain;if(a.chain>=5)texts.push({x:W/2,y:H*.3,s:'BIGGEST SMASH! '+a.chain,t:0,col:'#ff922b',sz:U*7,big:1})}a.chain=0;a.combo=0;persist()}
 function stomp(d,r,dmg,big){shake=Math.max(shake,big?26:9);S.stomp(big);
