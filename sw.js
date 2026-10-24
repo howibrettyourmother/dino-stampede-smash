@@ -1,6 +1,6 @@
 // offline support: precache everything; pages+scripts network-first (cache fallback offline), media cache-first.
 // Bump V on each release so old caches are dropped.
-const P='dino-stampede-smash-',V='1.0.0-20261024a',C=P+V,A=["./", "index.html", "manifest.json", "apple-touch-icon.png", "favicon-32.png", "icon-192.png", "icon-512.png"];
+const P='dino-stampede-smash-',V='1.1.0-20261024b',C=P+V,A=["./", "index.html", "manifest.json", "apple-touch-icon.png", "favicon-32.png", "icon-192.png", "icon-512.png"];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(A.map(u=>new Request(u,{cache:'reload'})))).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k.startsWith(P)&&k!==C).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
 self.addEventListener('message',e=>{if(e.data==='skipWaiting')self.skipWaiting()});
