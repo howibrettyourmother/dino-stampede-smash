@@ -28,7 +28,7 @@ function initAudio(){if(AC)return;try{AC=new(window.AudioContext||window.webkitA
 function unlock(){initAudio();if(!AC)return;if(AC.state!=='running'){try{AC.resume()}catch(e){}}
  try{const s=AC.createBufferSource();s.buffer=AC.createBuffer(1,1,22050);s.connect(AC.destination);s.start(0)}catch(e){}}
 // Zoe mode counting voice (shared kids-voice pack, src/kv): every smash says the running count; music ducks under it
-if(window.KV)KV.init({getCtx:()=>{initAudio();return AC},duck:()=>musG,clips:window.KV_CLIPS,preload:['n1','n2','n3','n4','n5']});
+if(window.KV)KV.init({getCtx:()=>{initAudio();return AC},duck:()=>musG,clips:window.KV_CLIPS,preload:['n10','n20']});
 const live=()=>AC&&AC.state==='running';
 function tone(type,f0,f1,dur,vol,t0=0,dest){if(!live())return;dest=dest||sfxG;const t=AC.currentTime+Math.max(0,t0),o=AC.createOscillator(),gn=AC.createGain();o.type=type;
  o.frequency.setValueAtTime(f0,t);if(f1!==f0)o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);
@@ -121,12 +121,13 @@ function destroy(b,by){if(!b.alive)return;b.alive=false;const cx=b.x,cy=b.y-b.h*
  if(b.boom)pending.push({t:.22,x:b.x,y:b.y,r:b.w*1.8,by});
  if(b.type==='tower'){const dir=R()<.5?-1:1;for(let i=0;i<22;i++)chunks.push({x:b.x+dir*i*U*1.7,y:b.y+rr(-1,1)*U,z:U*rr(0,5),vx:dir*U*rr(5,20),vy:0,vz:U*rr(10,40),s:U*rr(1.5,3),col:i%2?'#c92a2a':'#f1f3f5',rot:R()*6,vr:rr(-6,6),life:rr(2,3.5)});shake=Math.max(shake,30);texts.push({x:b.x,y:b.y-b.h,s:'TIMBER!',t:0,col:'#ff922b',sz:U*8,big:1})}
  credit(by,b)}
+let zPop=0,zSayT=-1e9;// Zoe count pop on screen; voice only on milestones (10,20..), max one every 4 s
 function credit(by,b){save.smashed++;if(by==='wave')return;const pts=b.max*10;
  const a=(by==='alex'||by==='jet')?alexD():null,z=by==='zoe'?zoeD():null;
  if(a){if(a.comboT>0)a.combo++;else a.combo=1;a.comboT=mode==='alex'&&ms?Math.max(1,2.6-ms.L*.07):2.6;a.chain++;a.mega=Math.min(1,a.mega+(by==='jet'?.03:.07)*(ab('MEGA CHARGE')?1.4:1));if(b.type==='fuel'&&a.hp<a.hpMax){a.hp=Math.min(a.hpMax,a.hp+10);texts.push({x:b.x,y:b.y-b.h-U*8,s:'+10 ❤️',t:0,col:'#69db7c',sz:U*4.5})}if(mode==='alex')misCount(b);const p=pts*a.combo;a.score+=p;
   if(a.combo>=3&&a.combo%1===0)texts.push({x:b.x,y:b.y-b.h-U*4,s:'x'+a.combo+'!',t:0,col:'#ffd43b',sz:U*(5+Math.min(a.combo,12)*.4)});
   if(mode==='alex'&&a.score>save.hi)save.hi=a.score}
- if(z){z.score++;save.zoe++;if(mode==='zoe'&&window.KV)KV.count(z.score)}
+ if(z){z.score++;save.zoe++;zPop=1;if(mode==='zoe'){texts.push({x:b.x,y:b.y-b.h-U*4,s:''+z.score,t:0,col:'#ff5c8a',sz:U*6});const tn=performance.now();if(window.KV&&z.score%10===0&&z.score<=100&&tn-zSayT>4000){zSayT=tn;KV.say('n'+z.score,{prio:2})}}}
  if(mode==='together'&&!finale&&!wave)meter=Math.min(1,meter+.028)}
 function endCombo(a){if(a.chain>save.biggest&&mode==='alex'){save.biggest=a.chain;if(a.chain>=5)texts.push({x:W/2,y:H*.3,s:'BIGGEST SMASH! '+a.chain,t:0,col:'#ff922b',sz:U*7,big:1})}a.chain=0;a.combo=0;persist()}
 function stomp(d,r,dmg,big){shake=Math.max(shake,big?26:9);S.stomp(big);
@@ -502,7 +503,7 @@ function drawHUD(){const a=alexD(),z=zoeD();
    if(k==='mega'&&ready){g.strokeStyle='#ffe066';g.lineWidth=U*(1+Math.sin(T*10)*.5);g.beginPath();g.arc(b.x,b.y,b.r*1.15,0,6.3);g.stroke()}
    g.font=Math.round(b.r*.9)+'px sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(b.ic,b.x,b.y);g.globalAlpha=1}
   for(const p of ptrs.values())if(p.k==='joy'){g.globalAlpha=.35;circ(p.ox,p.oy,U*11,'#fff');g.globalAlpha=.7;let dx=p.x-p.ox,dy=p.y-p.oy;const l=Math.hypot(dx,dy),m=U*11;if(l>m){dx*=m/l;dy*=m/l}circ(p.ox+dx,p.oy+dy,U*5,'#fff');g.globalAlpha=1}}
- if(z&&mode==='zoe'){txt('💖 '+z.score,W/2,U*6,U*6,'#ff5c8a')}
+ if(z&&mode==='zoe'){zPop=Math.max(0,zPop-.06);txt('💖 '+z.score,W/2,U*6,U*6*(1+.45*zPop),'#ff5c8a')}
  if(mode==='together'){const mw=W*.4,mx=W/2-mw/2,my=U*3;g.lineWidth=U*.6;g.strokeStyle='#fff';box(mx,my,mw,U*6,'rgba(60,20,80,.5)',U*3);
   if(meter>0){const gr=g.createLinearGradient(mx,0,mx+mw,0);RAINBOW.slice(0,6).forEach((c,i)=>gr.addColorStop(i/5,c));g.fillStyle=gr;g.beginPath();rrect(mx,my,mw*meter,U*6,U*3);g.fill()}
   g.font=Math.round(U*6)+'px sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText('🦄',mx-U*4,my+U*3);g.fillText('🦖',mx+mw+U*4,my+U*3);txt('SMASH METER',W/2,my+U*3,U*3,'#fff');
