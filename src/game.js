@@ -9,7 +9,7 @@ let state='title',mode='alex';
 let B=[],chunks=[],parts=[],smoke=[],rings=[],kitties=[],jets=[],bombs=[],lava=[],splats=[],rockets=[],texts=[],puddles=[],pending=[],dinos=[];
 let ms=null,heli=[],shots=[],strafes=[],boss=null,hurtT=0,heliT=4,strafeT=8;
 let zw={m:0,full:0,grow:2,gold:12,bal:3,target:8,cheer:0,stars:0},balloons=[],zstars=[];
-let tg={full:0,grow:1,gold:6,bal:2,lz:-9,la:-9,team:0,ab:1.5},TW={fallback:50,autoAfter:4,zoeN:8,alexN:9};let shake=0,flash=0,wave=null,waveTimer=35,meter=0,finale=0,jetTimer=4,volT=5,menuHold=null,titleT=0;
+let tg={full:0,grow:1,gold:5,bal:3,lz:-9,la:-9,team:0,ab:1.2},TW={fallback:40,autoAfter:3,zoeN:6,alexN:9};let shake=0,flash=0,wave=null,waveTimer=35,meter=0,finale=0,jetTimer=4,volT=5,menuHold=null,titleT=0;
 const R=Math.random,rr=(a,b)=>a+R()*(b-a),clamp=(v,a,b)=>v<a?a:v>b?b:v,pick=a=>a[R()*a.length|0];
 const RAINBOW=['#ff5c8a','#ffa94d','#ffe066','#69db7c','#4dabf7','#b197fc','#f783ac','#ffffff'];
 const HOT=['#ffd43b','#ff922b','#ff6b6b','#fff3bf','#74c0fc','#e599f7','#8ce99a'];
@@ -162,7 +162,7 @@ function rebuild(){if(mode==='alex'){S.build();startLevel(save.cur);return}
  texts.push({x:W/2,y:H*.3,s:mode==='zoe'?'✨🏰✨':'✨ NEW TOWN! ✨',t:0,col:'#ff8fe0',sz:U*8,big:1});
  persist();chunks=[];lava=[];splats=[];genTown(true);genPuddles();S.build();waveTimer=mode==='together'?TW.fallback:mode==='zoe'?ZT.fallback:rr(30,45);if(mode==='zoe')zReset();if(mode==='together')tReset()}
 // ---------- Zoe mode v2: wave meter, regrowth, treasure, balloons, surfing + stars ----------
-const ZT={fill:.07,autoAfter:2.5,smashFrac:.8,fallback:45,regrow:1.8,goldEvery:[10,16],balEvery:[3.5,6],balMax:3,waveSpd:.3,starN:9};
+const ZT={fill:.07,autoAfter:2.0,smashFrac:.8,fallback:35,regrow:1.15,goldEvery:[8,13],balEvery:[2.5,4.5],balMax:5,waveSpd:.35,starN:12};
 function zReset(all){zw.m=0;zw.full=0;zw.grow=1.2;if(all){zw.gold=rr(5,8);zw.bal=rr(1.5,3)}zw.target=Math.max(6,B.length);zw.gone=0;zw.cheer=0}
 const zBtn=()=>{const r=Math.max(44,U*(W<H?9:10.5));return mode==='together'?{x:r+U*3,y:H-r-U*3,r}:{x:W-r-U*3,y:H-r-U*3,r}};
 const zM=()=>mode==='together'?meter:zw.m;
