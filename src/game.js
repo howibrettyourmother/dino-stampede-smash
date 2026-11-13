@@ -23,13 +23,13 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden)persist()})
 let AC=null,master,sfxG,musG,NB=null,engine=null;
 function initAudio(){if(AC)return;try{AC=new(window.AudioContext||window.webkitAudioContext)()}catch(e){AC=null;return}
  const comp=AC.createDynamicsCompressor();comp.threshold.value=-14;comp.ratio.value=4;comp.connect(AC.destination);
- master=AC.createGain();master.gain.value=.85;master.connect(comp);sfxG=AC.createGain();sfxG.connect(master);musG=AC.createGain();musG.gain.value=.28;musG.connect(master);
+ master=AC.createGain();master.gain.value=(muted||paused)?0:.85;master.connect(comp);sfxG=AC.createGain();sfxG.connect(master);musG=AC.createGain();musG.gain.value=.28;musG.connect(master);
  NB=AC.createBuffer(1,AC.sampleRate*2,AC.sampleRate);const d=NB.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=R()*2-1;
  if(AC.state!=='running'){const p=AC.resume();if(p&&p.catch)p.catch(()=>{})}}
 function unlock(){initAudio();if(!AC)return;if(AC.state!=='running'){try{AC.resume()}catch(e){}}
  try{const s=AC.createBufferSource();s.buffer=AC.createBuffer(1,1,22050);s.connect(AC.destination);s.start(0)}catch(e){}}
 // Zoe mode counting voice (shared kids-voice pack, src/kv): every smash says the running count; music ducks under it
-if(window.KV)KV.init({getCtx:()=>{initAudio();return AC},duck:()=>musG,clips:window.KV_CLIPS,preload:['n10','n20']});
+if(window.KV)KV.init({getCtx:()=>{initAudio();return AC},out:()=>{initAudio();return master||(AC&&AC.destination)},duck:()=>musG,clips:window.KV_CLIPS,preload:['n10','n20']});
 const live=()=>AC&&AC.state==='running';
 function tone(type,f0,f1,dur,vol,t0=0,dest){if(!live())return;dest=dest||sfxG;const t=AC.currentTime+Math.max(0,t0),o=AC.createOscillator(),gn=AC.createGain();o.type=type;
  o.frequency.setValueAtTime(f0,t);if(f1!==f0)o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);
@@ -156,7 +156,7 @@ function startGame(m){mode=m;state='play';chunks=[];parts=[];smoke=[];rings=[];k
  waveTimer=m==='zoe'?ZT.fallback:m==='together'?TW.fallback:1e9;jetTimer=m!=='together'?1e9:rr(3,6);volT=rr(4,7);dinos=[];
  if(m!=='alex')dinos.push(mkDino('uni','zoe',m==='zoe'?W*.5:W*.25,H*.78));if(m!=='zoe')dinos.push(mkDino('trex','alex',m==='alex'?W*.5:W*.75,H*.78));
  genTown(true);genPuddles();zReset(1);if(m==='together')tReset();if(m==='together')setTimeout(()=>S.horn(),300);for(const k in AIN)AIN[k]=k[0]==='j'?0:false;ptrs.clear();if(m==='alex')startLevel(save.cur)}
-function goTitle(){for(const d of dinos)if(d.who==='alex')endCombo(d);persist();state='title';setEngine(-1);ptrs.clear()}
+function goTitle(){paused=false;applyVol();for(const d of dinos)if(d.who==='alex')endCombo(d);persist();state='title';setEngine(-1);ptrs.clear()}
 function startWave(fin){if(mode==='zoe'||mode==='together'){zWave();return}wave={x:-W*.6,warn:fin?.6:2.2,fin};S.rumble();texts.push({x:W/2,y:H*.25,s:'🌊 TSUNAMI! 🌊',t:0,col:'#4dabf7',sz:U*10,big:1})}
 function rebuild(){if(mode==='alex'){S.build();startLevel(save.cur);return}
  texts.push({x:W/2,y:H*.3,s:mode==='zoe'?'✨🏰✨':'✨ NEW TOWN! ✨',t:0,col:'#ff8fe0',sz:U*8,big:1});
@@ -241,10 +241,17 @@ const ptrs=new Map(),AIN={jx:0,jy:0,boost:false,boostTap:false,roar:false,mega:f
 const region=x=>mode==='alex'?'alex':mode==='zoe'?'zoe':(x<W/2?'zoe':'alex');
 function btns(){const k=U*(W<H?.9:1);return{boost:{x:W-k*15,y:H-k*15,r:k*11.5,ic:'🚀'},roar:{x:W-k*39,y:H-k*11,r:k*9,ic:'🦖'},mega:{x:W-k*14,y:H-k*41,r:k*9,ic:'💥'}}}
 const menuBtn=()=>({x:W-U*7,y:U*7,r:U*5});
+// mute + pause (top right, next to the hold-for-menu button); mute is remembered on this iPad
+let muted=(()=>{try{return localStorage.getItem('dss_muted')==='1'}catch(e){return false}})(),paused=false;
+const pauseBtn=()=>({x:W-U*19,y:U*7,r:U*5}),muteBtn=()=>state==='title'?{x:W-U*7,y:U*7,r:U*5}:{x:W-U*31,y:U*7,r:U*5};
+function applyVol(){if(master&&AC)master.gain.setTargetAtTime((muted||paused)?0:.85,AC.currentTime,.03)}
+function setMuted(m){muted=m;try{localStorage.setItem('dss_muted',m?'1':'0')}catch(e){}applyVol()}
+function setPaused(p){paused=p;ptrs.clear();AIN.boost=false;applyVol();if(p)persist()}
 let fsTried=false;function goFS(){if(fsTried)return;fsTried=true;const el=document.documentElement,f=el.requestFullscreen||el.webkitRequestFullscreen;if(f&&!document.fullscreenElement){try{const p=f.call(el);if(p&&p.catch)p.catch(()=>{})}catch(e){}}}
 const dist=(a,x,y)=>Math.hypot(a.x-x,a.y-y);
 cv.addEventListener('pointerdown',e=>{e.preventDefault();unlock();goFS();const x=e.clientX,y=e.clientY;try{cv.setPointerCapture(e.pointerId)}catch(_){}
- if(state==='title'){titleTap(x,y);return}
+ if(state==='title'){const tm=muteBtn();if(dist(tm,x,y)<tm.r*1.3){setMuted(!muted);return}titleTap(x,y);return}
+ {const mu=muteBtn(),pb=pauseBtn();if(dist(mu,x,y)<mu.r*1.3){setMuted(!muted);return}if(paused){if(dist(menuBtn(),x,y)>menuBtn().r*1.3){setPaused(false);S.boing&&S.boing();return}}else if(dist(pb,x,y)<pb.r*1.3){setPaused(true);return}}
  const mb=menuBtn();if(dist(mb,x,y)<mb.r*1.3){ptrs.set(e.pointerId,{k:'menu',t0:T});return}
  if(mode==='alex'&&ms&&ms.phase==='fail'){failTap(x,y);return}
  if(region(x)==='alex'){const bb=btns();for(const k of['boost','roar','mega'])if(dist(bb[k],x,y)<bb[k].r*1.2){ptrs.set(e.pointerId,{k});if(k==='boost'){AIN.boost=true;AIN.boostTap=true}else AIN[k]=true;return}
@@ -594,7 +601,15 @@ function drawHUD(){const a=alexD(),z=zoeD();
  // menu button (hold)
  const mb=menuBtn(),mp=[...ptrs.values()].find(p=>p.k==='menu');g.globalAlpha=.55;g.lineWidth=U*.4;g.strokeStyle='#fff';circ(mb.x,mb.y,mb.r,'rgba(0,0,0,.35)',1);g.globalAlpha=1;
  g.fillStyle='#fff';for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++)g.fillRect(mb.x+i*U*1.6-U*.6,mb.y+j*U*1.6-U*.6,U*1.2,U*1.2);
- if(mp){g.strokeStyle='#ffd54a';g.lineWidth=U*.9;g.beginPath();g.arc(mb.x,mb.y,mb.r,-Math.PI/2,-Math.PI/2+6.283*Math.min(1,(T-mp.t0)/.8));g.stroke()}}
+ if(mp){g.strokeStyle='#ffd54a';g.lineWidth=U*.9;g.beginPath();g.arc(mb.x,mb.y,mb.r,-Math.PI/2,-Math.PI/2+6.283*Math.min(1,(T-mp.t0)/.8));g.stroke()}
+ const pb=pauseBtn();g.globalAlpha=.55;g.lineWidth=U*.4;g.strokeStyle='#fff';circ(pb.x,pb.y,pb.r,'rgba(0,0,0,.35)',1);g.globalAlpha=1;g.fillStyle='#fff';
+ if(paused){g.beginPath();g.moveTo(pb.x-U*1.6,pb.y-U*2.4);g.lineTo(pb.x+U*2.4,pb.y);g.lineTo(pb.x-U*1.6,pb.y+U*2.4);g.closePath();g.fill()}else{g.fillRect(pb.x-U*2,pb.y-U*2.2,U*1.4,U*4.4);g.fillRect(pb.x+U*.6,pb.y-U*2.2,U*1.4,U*4.4)}
+ drawMuteBtn()}
+function drawMuteBtn(){const b=muteBtn();g.globalAlpha=.55;g.lineWidth=U*.4;g.strokeStyle='#fff';circ(b.x,b.y,b.r,'rgba(0,0,0,.35)',1);g.globalAlpha=1;
+ g.font=Math.round(b.r*1.1)+'px sans-serif';g.textAlign='center';g.textBaseline='middle';g.fillText(muted?'🔇':'🔊',b.x,b.y+U*.2)}
+function drawPause(){g.fillStyle='rgba(20,10,40,.55)';g.fillRect(0,0,W,H);const s=Math.min(W,H);
+ txt('PAUSED',W/2,H*.36,s*.12,'#fff');circ(W/2,H*.58,s*.12,'#40c057');g.fillStyle='#fff';g.beginPath();g.moveTo(W/2-s*.04,H*.58-s*.06);g.lineTo(W/2+s*.065,H*.58);g.lineTo(W/2-s*.04,H*.58+s*.06);g.closePath();g.fill();
+ txt('Tap to keep smashing!',W/2,H*.78,s*.05,'#ffe066');drawMuteBtn()}
 function drawFX(){for(const s of smoke){g.globalAlpha=Math.max(0,s.life/s.max)*.7;circ(s.x,s.y,s.r,s.col)}g.globalAlpha=1;
  for(const p of parts){const a=Math.max(0,Math.min(1,p.life/p.max*1.5));g.globalAlpha=a;g.fillStyle=p.col;
   if(p.shape==='flash'){g.globalAlpha=a*.8;circ(p.x,p.y,p.size*(1.3-p.life/p.max*.5),p.col)}else if(p.shape==='star'){starP(p.x,p.y,p.size*1.3);g.fill()}else if(p.shape==='heart'){heartP(p.x,p.y,p.size);g.fill()}else{g.beginPath();g.arc(p.x,p.y,p.size,0,6.3);g.fill()}}g.globalAlpha=1;
@@ -633,8 +648,8 @@ function drawKittyAt(x,y,s){g.save();g.translate(x,y);g.scale(s/(U*5),s/(U*5));d
 function drawIconArt(){const s=Math.min(W,H);const pm=mode;if(pm==='zoe')bg(0,W,'candy');else if(pm==='alex')bg(0,W,'city');else{mode='together';bg(0,W/2,'candy');bg(W/2,W,'city')}mode=pm;
  if(pm==='zoe'){drawDino('uni',W*.42,H*.96,s*.68,{face:1,t:1})}else if(pm==='alex'){drawDino('trex',W*.47,H*.93,s*.72,{face:1,t:1,fly:1})}else{drawDino('uni',W*.28,H*.92,s*.5,{face:1,t:1});drawDino('trex',W*.72,H*.92,s*.52,{face:-1,t:1})}}
 // ---------- loop ----------
-let lt=performance.now();function frame(now){const dt=Math.min(.05,(now-lt)/1000);lt=now;try{update(dt)}catch(e){console.error(e)}
- g.setTransform(DPR,0,0,DPR,0,0);if(shake>.3)g.translate(rr(-1,1)*shake*.4,rr(-1,1)*shake*.4);if(state==='icon')drawIconArt();else if(state==='title')drawTitle();else{drawWorld();drawHUD()}
+let lt=performance.now();function frame(now){const dt=Math.min(.05,(now-lt)/1000);lt=now;try{if(!(paused&&state!=='title'))update(dt)}catch(e){console.error(e)}
+ g.setTransform(DPR,0,0,DPR,0,0);if(shake>.3)g.translate(rr(-1,1)*shake*.4,rr(-1,1)*shake*.4);if(state==='icon')drawIconArt();else if(state==='title')drawTitle();else{drawWorld();drawHUD();if(paused)drawPause()}if(state==='title')drawMuteBtn();
  requestAnimationFrame(frame)}
 resize();initAudio();requestAnimationFrame(frame);
 window.__DS={start:startGame,title:goTitle,get state(){return state},get mode(){return mode},get B(){return B},get dinos(){return dinos},get meter(){return meter},set meter(v){meter=v},wave:()=>startWave(false),save,get ms(){return ms},level:startLevel,get heli(){return heli},get shots(){return shots},get boss(){return boss},hit:(n)=>{const a=alexD();if(a){a.inv=0;a.dodge=0;hitDino(a,n,a.x,a.y)}},AIN,tapZoe,get audio(){return AC&&AC.state},drawIcon:(m)=>{state='icon';mode=m},get zw(){return zw},get balloons(){return balloons},get zstars(){return zstars},get wv(){return wave},zBtn:()=>zBtn(),get parts(){return parts.length},get kitties(){return kitties.length}};
