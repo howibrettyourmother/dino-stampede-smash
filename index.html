@@ -780,13 +780,17 @@ sw.addEventListener('controllerchange',function(){if(!had){had=true;return}if(do
 function up(){if(sw.getRegistration)sw.getRegistration().then(function(g){if(g)g.update()}).catch(function(){})}
 document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible')up()});})();</script>
 <script>/*hub-home*/(function(){var own='alex',k;try{k=localStorage.kidsHub}catch(e){}if(k!=='zoe'&&k!=='alex')k=own;
-var u=k==='zoe'?'/doodle-and-zoe/':'/alex-games/',b=document.createElement('div');b.id='hubHome';b.setAttribute('role','button');b.setAttribute('aria-label','hold to go home');
-b.innerHTML='<svg width="38" height="38" viewBox="0 0 38 38" style="position:absolute;left:0;top:0;pointer-events:none"><circle cx="19" cy="19" r="16" fill="none" stroke="#ffd54a" stroke-width="4" stroke-linecap="round" stroke-dasharray="100.5" stroke-dashoffset="100.5" transform="rotate(-90 19 19)"/></svg><span style="position:relative;pointer-events:none">🏠</span>';
-b.style.cssText='position:fixed;z-index:2147483000;width:38px;height:38px;border-radius:19px;display:flex;align-items:center;justify-content:center;font-size:19px;line-height:1;background:rgba(255,255,255,.45);opacity:.5;box-shadow:0 1px 4px rgba(0,0,0,.2);-webkit-tap-highlight-color:transparent;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;cursor:pointer;left:calc(6px + env(safe-area-inset-left));top:calc(6px + env(safe-area-inset-top))';
+var u=k==='zoe'?'/doodle-and-zoe/':'/alex-games/',SZ=68,R=27,C=2*Math.PI*R,b=document.createElement('div');b.id='hubHome';b.setAttribute('role','button');b.setAttribute('aria-label',k==='zoe'?'Go home':'Hold to go home');
+b.innerHTML='<svg width="'+SZ+'" height="'+SZ+'" viewBox="0 0 '+SZ+' '+SZ+'" style="position:absolute;left:0;top:0;pointer-events:none"><circle cx="'+SZ/2+'" cy="'+SZ/2+'" r="'+R+'" fill="none" stroke="#ffd54a" stroke-width="5" stroke-linecap="round" stroke-dasharray="'+C+'" stroke-dashoffset="'+C+'" transform="rotate(-90 '+SZ/2+' '+SZ/2+')"/></svg><span style="position:relative;pointer-events:none">🏠</span>';
+b.style.cssText='position:fixed;z-index:2147483646;width:'+SZ+'px;height:'+SZ+'px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:34px;line-height:1;background:#fff;opacity:1;box-shadow:0 2px 8px rgba(0,0,0,.28),0 0 0 3px #ffd54a;box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;cursor:pointer;left:calc(10px + env(safe-area-inset-left));top:calc(10px + env(safe-area-inset-top))';
 var ring=b.querySelector('circle'),hint=document.createElement('div');
-hint.textContent='Hold to go home';hint.style.cssText='position:fixed;z-index:2147483000;padding:6px 10px;border-radius:12px;background:rgba(0,0,0,.72);color:#fff;font:bold 14px/1.2 sans-serif;white-space:nowrap;pointer-events:none;opacity:0;-webkit-transition:opacity .2s;transition:opacity .2s';
+hint.textContent='Hold to go home';hint.style.cssText='position:fixed;z-index:2147483646;padding:8px 12px;border-radius:14px;background:rgba(0,0,0,.72);color:#fff;font:bold 16px/1.2 sans-serif;white-space:nowrap;pointer-events:none;opacity:0;-webkit-transition:opacity .2s;transition:opacity .2s';
 var t0=0,raf=0,on=false,done=false,ht=0,HOLD=1000;
-function set(p){ring.setAttribute('stroke-dashoffset',String(100.5*(1-p)))}
+function set(p){ring.setAttribute('stroke-dashoffset',String(C*(1-p)))}
+function clearOffl(){var o=document.getElementById('offl');if(!o)return;o.style.zIndex='10000';
+ var hb=b.getBoundingClientRect(),ob=o.getBoundingClientRect();
+ if(!(hb.right<ob.left-2||ob.right<hb.left-2||hb.bottom<ob.top-2||ob.bottom<hb.top-2)){o.style.left='50%';o.style.top=(hb.bottom+10)+'px';o.style.transform='translateX(-50%)'}}
+function watchOffl(){clearOffl();var n=0,iv=setInterval(function(){clearOffl();if(++n>24)clearInterval(iv)},400)}
 function showHint(){var r=b.getBoundingClientRect();hint.style.top=(r.bottom+6)+'px';hint.style.left=Math.max(4,r.left)+'px';hint.style.opacity='1';clearTimeout(ht);ht=setTimeout(function(){hint.style.opacity='0'},1600)}
 function leave(){done=true;try{window.dispatchEvent(new Event('hubsave'))}catch(x){}try{if(typeof window.hubSave==='function')window.hubSave()}catch(x){}
  setTimeout(function(){if(self!==top){try{parent.postMessage('hubClose',location.origin)}catch(x){}setTimeout(function(){try{location.href=u}catch(x){}},700);return}location.href=u},150)}
@@ -804,11 +808,11 @@ function block(e){var now=Date.now();if(!pop){if(now<blockTill&&e.target!==b){e.
  if(ty==='touchend'||ty==='mouseup'){if(ty==='touchend')lastTE=now;else if(now-lastTE<800)return;if(!armed)return;armed=false;
   if(inBtn(e)){if(now-popT<350)return;clearTimeout(popTO);leave();return}closePop()}}
 ['touchstart','touchmove','touchend','touchcancel','mousedown','mousemove','mouseup','click','pointerdown','pointermove','pointerup','keydown','keyup','wheel','contextmenu'].forEach(function(n){addEventListener(n,block,{capture:true,passive:false})});
-function down(e){e.preventDefault();e.stopPropagation();if(k==='zoe'){openPop();return}if(on||done)return;on=true;t0=Date.now();b.style.opacity='1';hint.style.opacity='0';raf=requestAnimationFrame(tick)}
-function up(e){e.preventDefault();e.stopPropagation();if(k==='zoe')return;if(!on)return;on=false;cancelAnimationFrame(raf);set(0);b.style.opacity='.5';if(Date.now()-t0<HOLD)showHint()}
+function down(e){e.preventDefault();e.stopPropagation();if(k==='zoe'){openPop();return}if(on||done)return;on=true;t0=Date.now();hint.style.opacity='0';raf=requestAnimationFrame(tick)}
+function up(e){e.preventDefault();e.stopPropagation();if(k==='zoe')return;if(!on)return;on=false;cancelAnimationFrame(raf);set(0);if(Date.now()-t0<HOLD)showHint()}
 function stop(e){e.stopPropagation()}
 b.addEventListener('touchstart',down,{passive:false});b.addEventListener('touchend',up,{passive:false});b.addEventListener('touchcancel',up,{passive:false});
 b.addEventListener('mousedown',down);b.addEventListener('mouseup',up);b.addEventListener('mouseleave',function(e){if(on)up(e)});
 ['pointerdown','pointerup','click'].forEach(function(n){b.addEventListener(n,stop)});
-function add(){document.body.appendChild(b);document.body.appendChild(hint)}if(document.body)add();else addEventListener('DOMContentLoaded',add)})();</script>
+function add(){document.body.appendChild(b);document.body.appendChild(hint);watchOffl()}if(document.body)add();else addEventListener('DOMContentLoaded',add)})();</script>
 </body></html>
