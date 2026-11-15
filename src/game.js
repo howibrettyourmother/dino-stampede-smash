@@ -27,7 +27,7 @@ function initAudio(){if(AC)return;try{AC=new(window.AudioContext||window.webkitA
  NB=AC.createBuffer(1,AC.sampleRate*2,AC.sampleRate);const d=NB.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=R()*2-1;
  if(AC.state!=='running'){const p=AC.resume();if(p&&p.catch)p.catch(()=>{})}}
 function unlock(){initAudio();if(!AC)return;if(AC.state!=='running'){try{AC.resume()}catch(e){}}
- try{const s=AC.createBufferSource();s.buffer=AC.createBuffer(1,1,22050);s.connect(AC.destination);s.start(0)}catch(e){}}
+ try{const s=AC.createBufferSource();s.buffer=AC.createBuffer(1,1,22050);s.connect(AC.destination);s.start(0)}catch(e){}startMusLoop()}
 // Zoe mode counting voice (shared kids-voice pack, src/kv): every smash says the running count; music ducks under it
 if(window.KV)KV.init({getCtx:()=>{initAudio();return AC},out:()=>{initAudio();return master||(AC&&AC.destination)},duck:()=>musG,clips:window.KV_CLIPS,preload:['n10','n20']});
 const live=()=>AC&&AC.state==='running';
@@ -71,9 +71,11 @@ function setEngine(v){if(!live())return;if(!engine){const o=AC.createOscillator(
   o.type='sawtooth';o2.type='square';o.frequency.value=42;o2.frequency.value=43.3;f.type='lowpass';f.frequency.value=260;gn.gain.value=0;
   l.frequency.value=14;lg.gain.value=6;l.connect(lg);lg.connect(o.frequency);lg.connect(o2.frequency);o.connect(f);o2.connect(f);f.connect(gn);gn.connect(sfxG);o.start();o2.start();l.start();engine={o,o2,f,gn,l}}
  const t=AC.currentTime;engine.gn.gain.setTargetAtTime(v<0?0:.035+v*.13,t,.08);const fr=40+Math.max(0,v)*45;engine.o.frequency.setTargetAtTime(fr,t,.1);engine.o2.frequency.setTargetAtTime(fr*1.03,t,.1);engine.f.frequency.setTargetAtTime(220+Math.max(0,v)*500,t,.1);engine.l.frequency.setTargetAtTime(12+v*10,t,.1)}
-// music
-const mtof=m=>440*Math.pow(2,(m-69)/12);let musT=0,musStep=0;
+// music — recorded looping BGM when present; procedural chiptune is the fallback
+const mtof=m=>440*Math.pow(2,(m-69)/12);let musT=0,musStep=0,musBuf=null,musSrc=null;
 const AB=[40,40,52,40,43,40,55,43,38,38,50,38,45,43,40,38],ZM=[72,76,79,76,81,79,76,74,72,74,76,79,84,81,79,0,77,76,74,72,74,76,72,0,69,72,74,76,79,76,74,72],ZB=[48,55,53,55,57,55,53,50];
+(function loadMus(){try{fetch('music/bg.mp3').then(function(r){if(!r.ok)throw 0;return r.arrayBuffer()}).then(function(b){function dec(){if(!AC)return;AC.decodeAudioData(b.slice(0),function(buf){musBuf=buf;if(musG)musG.gain.value=.55;startMusLoop()})}if(AC)dec();else{var iv=setInterval(function(){if(AC){clearInterval(iv);dec()}},200)}})}catch(e){}})();
+function startMusLoop(){if(!AC||!musBuf||musSrc)return;try{var s=AC.createBufferSource();s.buffer=musBuf;s.loop=true;s.loopStart=48;s.loopEnd=96;s.connect(musG);s.start(0,48);musSrc=s}catch(e){}}
 function musStepPlay(st,t){const m=state==='title'?'title':mode,d=t-AC.currentTime,alexy=m==='alex'||m==='together',zoey=m==='zoe'||m==='together'||m==='title';const s16=st%16;
  if(alexy){if(s16===0||s16===6||s16===8||s16===11)tone('sine',120,40,.25,m==='alex'?.9:.6,d,musG);
   if(s16===4||s16===12)noise(.18,m==='alex'?.5:.35,'bandpass',1800,900,d,.7,musG);
@@ -82,7 +84,7 @@ function musStepPlay(st,t){const m=state==='title'?'title':mode,d=t-AC.currentTi
  if(zoey&&st%2===0){const n=ZM[(st/2|0)%32];if(n){tone('triangle',mtof(n),mtof(n),.4,.3,d,musG);tone('sine',mtof(n+12),mtof(n+12),.25,.08,d,musG)}
   if(st%8===0){const b=ZB[(st/8|0)%8];tone('sine',mtof(b),mtof(b),.7,.4,d,musG)}
   if(m!=='together'&&st%4===2)noise(.05,.08,'highpass',8000,9000,d,1,musG)}}
-setInterval(()=>{if(!live())return;const sd=60/((state==='play'&&mode==='alex')?150:state==='play'&&mode==='together'?132:116)/4;
+setInterval(()=>{if(!live())return;if(musBuf||musSrc){startMusLoop();return}const sd=60/((state==='play'&&mode==='alex')?150:state==='play'&&mode==='together'?132:116)/4;
  if(musT<AC.currentTime)musT=AC.currentTime+.05;while(musT<AC.currentTime+.25){musStepPlay(musStep,musT);musStep++;musT+=sd}},40);
 // ---------- layout ----------
 const groundTop=()=>HZ+U*6;

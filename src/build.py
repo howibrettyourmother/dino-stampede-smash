@@ -13,7 +13,7 @@ sw=re.search(r'SNIP="""(.*?)"""',open('/workspace/kids-hubs/swfix.py').read(),re
 i=t.rfind('</body>');t=t[:i]+sw+'\n'+home+'\n'+t[i:]
 open(f'{O}/index.html','w').write(t)
 fetch=re.search(r'FETCH=r"""(.*?)"""',open('/workspace/kids-hubs/swfix.py').read(),re.S).group(1)
-A=["./","index.html","manifest.json","apple-touch-icon.png","favicon-32.png","icon-192.png","icon-512.png"]
+A=["./","index.html","manifest.json","apple-touch-icon.png","favicon-32.png","icon-192.png","icon-512.png","music/bg.mp3"]
 s=("// offline support: precache everything; pages+scripts network-first (cache fallback offline), media cache-first.\n// Bump V on each release so old caches are dropped.\n"
  f"const P='dino-stampede-smash-',V='{V}',C=P+V,A={A!r};\n".replace("'",'"').replace('"dino-stampede-smash-"',"'dino-stampede-smash-'").replace(f'"{V}"',f"'{V}'")+
  "self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(A.map(u=>new Request(u,{cache:'reload'})))).then(()=>self.skipWaiting()))});\n"
