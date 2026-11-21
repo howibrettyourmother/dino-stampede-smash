@@ -131,12 +131,13 @@ function destroy(b,by){if(!b.alive)return;b.alive=false;const cx=b.x,cy=b.y-b.h*
  if(b.type==='tower'){const dir=R()<.5?-1:1;for(let i=0;i<22;i++)chunks.push({x:b.x+dir*i*U*1.7,y:b.y+rr(-1,1)*U,z:U*rr(0,5),vx:dir*U*rr(5,20),vy:0,vz:U*rr(10,40),s:U*rr(1.5,3),col:i%2?'#c92a2a':'#f1f3f5',rot:R()*6,vr:rr(-6,6),life:rr(2,3.5)});shake=Math.max(shake,30);texts.push({x:b.x,y:b.y-b.h,s:'TIMBER!',t:0,col:'#ff922b',sz:U*8,big:1})}
  credit(by,b)}
 let zPop=0,zSayT=-1e9;// Zoe count pop on screen; voice only on milestones (10,20..), max one every 4 s
+function dinoVoice(who){const tn=performance.now();if(!window.KVX||tn-(window._dinoSayT||0)<4000)return;window._dinoSayT=tn;const lines=who==='zoe'?['dino_stomp','dino_smash_z']:['dino_smash_a','dino_stomp_a'];window._dinoSayI=window._dinoSayI||{zoe:0,alex:0};const k=lines[window._dinoSayI[who]%lines.length];window._dinoSayI[who]++;KVX.say(k,{prio:2,voice:who})}
 function credit(by,b){save.smashed++;if(by==='wave')return;const pts=b.max*10;
  const a=(by==='alex'||by==='jet')?alexD():null,z=by==='zoe'?zoeD():null;
  if(a){if(a.comboT>0)a.combo++;else a.combo=1;a.comboT=mode==='alex'&&ms?Math.max(1,2.6-ms.L*.07):2.6;a.chain++;a.mega=Math.min(1,a.mega+(by==='jet'?.03:.07)*(ab('MEGA CHARGE')?1.4:1));if(b.type==='fuel'&&a.hp<a.hpMax){a.hp=Math.min(a.hpMax,a.hp+10);texts.push({x:b.x,y:b.y-b.h-U*8,s:'+10 ❤️',t:0,col:'#69db7c',sz:U*4.5})}if(mode==='alex')misCount(b);const p=pts*a.combo;a.score+=p;
   if(a.combo>=3&&a.combo%1===0)texts.push({x:b.x,y:b.y-b.h-U*4,s:'x'+a.combo+'!',t:0,col:'#ffd43b',sz:U*(5+Math.min(a.combo,12)*.4)});
-  if(mode==='alex'&&a.score>save.hi)save.hi=a.score}
- if(z){z.score++;save.zoe++;zPop=1;if(mode==='zoe'){texts.push({x:b.x,y:b.y-b.h-U*4,s:''+z.score,t:0,col:'#ff5c8a',sz:U*6});const tn=performance.now();if(window.KV&&z.score%10===0&&z.score<=100&&tn-zSayT>4000){zSayT=tn;KV.say('n'+z.score,{prio:2})}}}
+  if(mode==='alex'&&a.score>save.hi)save.hi=a.score;if(mode==='alex'||mode==='together')dinoVoice('alex')}
+ if(z){z.score++;save.zoe++;zPop=1;if(mode==='zoe'){texts.push({x:b.x,y:b.y-b.h-U*4,s:''+z.score,t:0,col:'#ff5c8a',sz:U*6});const tn=performance.now();if(window.KV&&z.score%10===0&&z.score<=100&&tn-zSayT>4000){zSayT=tn;KV.say('n'+z.score,{prio:2})}else dinoVoice('zoe')}else if(mode==='together')dinoVoice('zoe')}
  if(mode==='together'&&!wave)tCredit(by,b);if(mode==='zoe'&&!wave&&by==='zoe')zFill(b.gold?.25:.07)}
 function endCombo(a){if(a.chain>save.biggest&&mode==='alex'){save.biggest=a.chain;if(a.chain>=5)texts.push({x:W/2,y:H*.3,s:'BIGGEST SMASH! '+a.chain,t:0,col:'#ff922b',sz:U*7,big:1})}a.chain=0;a.combo=0;persist()}
 function stomp(d,r,dmg,big){shake=Math.max(shake,big?26:9);S.stomp(big);

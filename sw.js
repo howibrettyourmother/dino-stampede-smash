@@ -1,7 +1,8 @@
 // offline support: precache everything; pages+scripts network-first (cache fallback offline), media cache-first.
 // Bump V on each release so old caches are dropped.
-const P='dino-stampede-smash-',V='1.5.2-20261115intro-20261120el',C=P+V,A=["./", "index.html", "manifest.json", "apple-touch-icon.png", "favicon-32.png", "icon-192.png", "icon-512.png", "music/bg.mp3", "music/intro.mp3", "audio/pack.js", "audio/sfx/ui_click.mp3", "audio/sfx/correct.mp3", "audio/sfx/win.mp3"];
-self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(A.map(u=>new Request(u,{cache:'reload'})))).then(()=>self.skipWaiting()))});
+const P='dino-stampede-smash-',V='1.5.2-20261115intro-20261120el2',C=P+V,A=["./", "index.html", "manifest.json", "apple-touch-icon.png", "favicon-32.png", "icon-192.png", "icon-512.png", "music/bg.mp3", "music/intro.mp3", "audio/pack.js", "audio/sfx/ui_click.mp3", "audio/sfx/correct.mp3", "audio/sfx/win.mp3", "audio/voice/zoe/dino_stomp.mp3", "audio/voice/zoe/dino_smash_z.mp3", "audio/voice/alex/dino_smash_a.mp3", "audio/voice/alex/dino_stomp_a.mp3"];
+function putOk(c,u){return fetch(new Request(u,{cache:'reload'})).then(res=>{if(res.ok)return c.put(u,res)}).catch(()=>{})}
+self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>Promise.all(A.map(u=>putOk(c,u)))).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k.startsWith(P)&&k!==C).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
 self.addEventListener('message',e=>{if(e.data==='skipWaiting')self.skipWaiting()});
 // network-first for pages + scripts (so updates show on the next launch), cache fallback when offline; media/images cache-first with background refresh.
